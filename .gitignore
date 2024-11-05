@@ -1,0 +1,6 @@
+# IDE settings
+.idea/
+*.iml
+
+# Test files (optional, based on project needs)
+*.http
