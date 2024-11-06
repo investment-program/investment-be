@@ -1,42 +1,16 @@
+from fastapi import APIRouter, HTTPException
 from datetime import datetime
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from app.schemas import Condition, ResponseModel
 
-app = FastAPI()
-
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
-
-
-class BacktestingPeriod(BaseModel):
-    start_year: int
-    start_month: int
-    end_year: int
-    end_month: int
-
-
-class Condition(BaseModel):
-    n_stock: int
-    min_dividend: float
-    investment_style: str
-    backtesting_period: BacktestingPeriod
-
-
-class ResponseModel(BaseModel):
-    condition: Condition
-    max_volatility: float
-    target_return: float
+condition_router = APIRouter()
 
 START_YEAR = 1966
-@app.post("/condition", response_model=ResponseModel, summary="분산 투자를 위한 조건 생성")
+
+@condition_router.post("/condition", response_model=ResponseModel, summary="분산 투자를 위한 조건 생성")
 async def create_condition(request: Condition):
     current_year = datetime.now().year
 
+    # 조건 검사 및 에러 처리
     if request.n_stock <= 0:
         raise HTTPException(status_code=400, detail="종목 수를 선택해주세요.")
 
@@ -63,6 +37,7 @@ async def create_condition(request: Condition):
     else:
         raise HTTPException(status_code=400, detail="투자 스타일을 선택해주세요.")
 
+    # 기간 검증
     if request.backtesting_period.start_year <= 0:
         raise HTTPException(status_code=400, detail="시작 연도를 입력해주세요.")
     elif request.backtesting_period.start_year < START_YEAR or request.backtesting_period.end_year > current_year:
@@ -87,8 +62,3 @@ async def create_condition(request: Condition):
         max_volatility=max_volatility,
         target_return=target_return
     )
-
-
-@app.get("/result")
-def result():
-    return {}
