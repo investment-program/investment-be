@@ -16,3 +16,8 @@ class ResponseModel(BaseModel):
     condition: Condition
     max_volatility: float
     target_return: float
+
+class BacktestRequest(BaseModel):
+    condition: Condition
+    max_volatility: float
+    target_return: float
