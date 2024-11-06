@@ -16,24 +16,22 @@ async def create_condition(request: Condition):
 
     if request.min_dividend <= 0:
         raise HTTPException(status_code=400, detail="배당 수익률을 입력해주세요.")
-    else:
-        request.min_dividend = request.min_dividend / 100
 
     if request.investment_style == "공격투자형":
-        max_volatility = 0.15
-        target_return = 0.06
+        max_volatility = 15
+        target_return = 6
     elif request.investment_style == "적극투자형":
-        max_volatility = 0.10
-        target_return = 0.05
+        max_volatility = 10
+        target_return = 5
     elif request.investment_style == "위험중립형":
-        max_volatility = 0.07
-        target_return = 0.04
+        max_volatility = 7
+        target_return = 4
     elif request.investment_style == "위험회피형":
-        max_volatility = 0.03
-        target_return = 0.03
+        max_volatility = 3
+        target_return = 3
     elif request.investment_style == "안전추구형":
-        max_volatility = 0.01
-        target_return = 0.02
+        max_volatility = 1
+        target_return = 2
     else:
         raise HTTPException(status_code=400, detail="투자 스타일을 선택해주세요.")
 
