@@ -6,7 +6,7 @@ import FinanceDataReader as fdr
 import pandas as pd
 from pykrx import stock
 
-from .portfolio import Portfolio
+from backtest.portfolio import Portfolio
 
 
 class DataLoader:

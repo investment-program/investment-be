@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
-from portfolio import Portfolio
+from backtest.portfolio import Portfolio
 
 
 class PortfolioOptimizer:

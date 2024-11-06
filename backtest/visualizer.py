@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from portfolio import Portfolio
+from backtest.portfolio import Portfolio
 
 
 class BacktestVisualizer:
@@ -17,7 +17,7 @@ class BacktestVisualizer:
         """시각화 스타일 설정"""
         plt.style.use("seaborn-v0_8-darkgrid")
         sns.set_theme()
-        plt.rcParams["font.family"] = "Malgun Gothic"
+        plt.rcParams["font.family"] = "AppleGothic"
         plt.rcParams["axes.unicode_minus"] = False
 
     def plot_results(self, results: Dict):

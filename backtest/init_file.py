@@ -1,5 +1,5 @@
-from main_module import run_backtest
-from portfolio import Portfolio
+from backtest.main_module import run_backtest
+from backtest.portfolio import Portfolio
 
 __all__ = [
     'Portfolio',
