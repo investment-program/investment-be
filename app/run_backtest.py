@@ -28,7 +28,7 @@ def run_backtest_api(
         portfolio = Portfolio(initial_capital=initial_capital, start_date=start_date, end_date=end_date)
 
         # 데이터 로드
-        data_loader = DataLoader(db_path)
+        data_loader = DataLoader(db_path=db_path)
         data_loader.load_stock_data(
             portfolio=portfolio,
             n_stocks=n_stocks,

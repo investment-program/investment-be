@@ -1,25 +1,51 @@
-import sqlite3
+import os
 from datetime import datetime
 from typing import Optional
 
 import FinanceDataReader as fdr
 import pandas as pd
+from dotenv import load_dotenv
 from pykrx import stock
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from backtest.portfolio import Portfolio
 
+load_dotenv()
+
 
 class DataLoader:
-    def __init__(self, db_path: str):
-        self.db_path = db_path
+    def __init__(self, db_path=None):
+        # 환경변수에서 DB 경로를 읽어옴
+        if os.getenv("ENV") == "local":  # 로컬 환경 체크
+            self.db_path = db_path or os.getenv("DB_PATH")
+        else:
+            self.db_path = os.getenv("DATABASE_URL")
+
+        if not self.db_path:
+            raise ValueError("DATABASE_URL 또는 DB_PATH 환경 변수가 설정되지 않았습니다.")
+
+        # db_path가 절대 경로일 경우 SQLAlchemy에서 인식할 수 있도록 sqlite:/// 추가
+        if self.db_path.startswith("sqlite://"):
+            self.db_path = self.db_path.replace("sqlite://", "")
+        elif not self.db_path.startswith("sqlite:///"):
+            self.db_path = "sqlite:///" + self.db_path
+
+        print(f"DB 경로: {self.db_path}")
+
+        # SQLAlchemy 엔진 생성
+        self.engine = create_engine(self.db_path)
+
+        # SQLAlchemy 세션 생성
+        self.Session = sessionmaker(bind=self.engine)
 
     def load_stock_data(
-        self,
-        portfolio: Portfolio,
-        n_stocks: int = 5,
-        min_dividend: float = 2.0,
-        min_liquidity: float = 500,
-        max_volatility: float = 40.0,
+            self,
+            portfolio: Portfolio,
+            n_stocks: int = 5,
+            min_dividend: float = 2.0,
+            min_liquidity: float = 500,
+            max_volatility: float = 40.0,
     ) -> None:
         """주식 데이터 로드"""
         # DB에서 기본 데이터 로드
@@ -40,9 +66,7 @@ class DataLoader:
                     valid_stocks[row["code"]] = df["Close"]
                     print(f"[성공] {row['code']} ({row['name']})")
                     print(f"       배당수익률: {row['dividend_yield']:.1f}%")
-                    print(
-                        f"       일평균거래대금: {row['liquidity']/1_000_000:.0f}백만원"
-                    )
+                    print(f"       일평균거래대금: {row['liquidity'] / 1_000_000:.0f}백만원")
                     print(f"       변동성: {row['volatility']:.1f}%")
                 else:
                     print(f"[제외] {row['code']} ({row['name']}): 유효하지 않은 데이터")
@@ -82,7 +106,8 @@ class DataLoader:
         LIMIT ?
         """
 
-        with sqlite3.connect(self.db_path) as conn:
+        # SQLAlchemy 엔진을 사용하여 쿼리 실행
+        with self.engine.connect() as conn:
             df = pd.read_sql(
                 query,
                 conn,
@@ -106,7 +131,7 @@ class DataLoader:
         for _, row in df.iterrows():
             print(f"{row['code']} ({row['name']}):")
             print(f"  배당수익률: {row['dividend_yield']:.1f}%")
-            print(f"  일평균거래대금: {row['liquidity']/1_000_000:.0f}백만원")
+            print(f"  일평균거래대금: {row['liquidity'] / 1_000_000:.0f}백만원")
             print(f"  변동성: {row['volatility']:.1f}%")
 
         return df
@@ -120,6 +145,12 @@ class DataLoader:
             df = fdr.DataReader(
                 formatted_code, portfolio.start_date, portfolio.end_date
             )
+
+            # 데이터 유효성 검증
+            if df is None or df.empty or df["Close"].isna().all():
+                print(f"[제외] {code}: 유효하지 않은 주가 데이터")
+                return None
+
             return df
         except Exception as e:
             print(f"주가 데이터 수집 실패 ({code}): {str(e)}")
