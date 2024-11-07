@@ -2,5 +2,7 @@
 .idea/
 *.iml
 
+.env
+
 # Test files (optional, based on project needs)
 *.http
