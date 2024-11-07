@@ -17,19 +17,14 @@ load_dotenv()
 class DataLoader:
     def __init__(self, db_path=None):
         # 환경변수에서 DB 경로를 읽어옴
-        if os.getenv("ENV") == "local":  # 로컬 환경 체크
-            self.db_path = db_path or os.getenv("DB_PATH")
-        else:
-            self.db_path = os.getenv("DATABASE_URL")
+        self.db_path = self._get_db_path()
 
         if not self.db_path:
             raise ValueError("DATABASE_URL 또는 DB_PATH 환경 변수가 설정되지 않았습니다.")
 
         # db_path가 절대 경로일 경우 SQLAlchemy에서 인식할 수 있도록 sqlite:/// 추가
-        if self.db_path.startswith("sqlite://"):
-            self.db_path = self.db_path.replace("sqlite://", "")
-        elif not self.db_path.startswith("sqlite:///"):
-            self.db_path = "sqlite:///" + self.db_path
+        if not self.db_path.startswith("sqlite:///"):
+            self.db_path = "sqlite:///" + os.path.abspath(self.db_path)
 
         print(f"DB 경로: {self.db_path}")
 
@@ -38,6 +33,12 @@ class DataLoader:
 
         # SQLAlchemy 세션 생성
         self.Session = sessionmaker(bind=self.engine)
+
+    def _get_db_path(self):
+        if os.getenv("ENV") == "local":
+            return os.getenv("DB_PATH")
+        else:
+            return os.getenv("DATABASE_URL")
 
     def load_stock_data(
             self,

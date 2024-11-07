@@ -21,9 +21,7 @@ def run_backtest(
     min_weight: float = 0.05,  # 최소 투자 비중
     max_weight: float = 0.90,  # 최대 투자 비중
     target_return: float = 0.05,  # 목표 수익률
-    risk_free_rate: float = 0.03,  # 무위험 수익률
-    # 기타 설정
-    db_path: str = "/Users/daeun/toyproject/stock_investment/data/stock_data.db"
+    risk_free_rate: float = 0.03  # 무위험 수익률
 ) -> Tuple[Portfolio, dict]:
     """백테스트 실행 함수
 
@@ -52,7 +50,7 @@ def run_backtest(
 
         # 2. 데이터 로드
         print("\n1. 데이터 로드 중...")
-        data_loader = DataLoader(db_path)
+        data_loader = DataLoader()
         data_loader.load_stock_data(
             portfolio=portfolio,
             n_stocks=n_stocks,

@@ -17,8 +17,7 @@ def run_backtest_api(
         target_return: float,
         backtesting_period,
         initial_capital: float = 100_000_000,
-        risk_free_rate: float = 0.03,
-        db_path: str = "/Users/daeun/toyproject/stock_investment/data/stock_data.db"
+        risk_free_rate: float = 0.03
 ):
     start_date = f"{backtesting_period.start_year}-{backtesting_period.start_month:02}-01"
     end_date = f"{backtesting_period.end_year}-{backtesting_period.end_month:02}-01"
@@ -28,7 +27,7 @@ def run_backtest_api(
         portfolio = Portfolio(initial_capital=initial_capital, start_date=start_date, end_date=end_date)
 
         # 데이터 로드
-        data_loader = DataLoader(db_path=db_path)
+        data_loader = DataLoader()
         data_loader.load_stock_data(
             portfolio=portfolio,
             n_stocks=n_stocks,
