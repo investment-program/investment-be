@@ -23,8 +23,12 @@ class DataLoader:
             raise ValueError("DATABASE_URL 또는 DB_PATH 환경 변수가 설정되지 않았습니다.")
 
         # db_path가 절대 경로일 경우 SQLAlchemy에서 인식할 수 있도록 sqlite:/// 추가
-        if not self.db_path.startswith("sqlite:///"):
-            self.db_path = "sqlite:///" + os.path.abspath(self.db_path)
+        if self.db_path.startswith("sqlite:///"):
+            self.db_path = self.db_path
+        elif self.db_path.startswith("postgresql://"):
+            self.db_path = self.db_path
+        else:
+            raise ValueError(f"지원되지 않는 DB 경로 형식: {self.db_path}")
 
         print(f"DB 경로: {self.db_path}")
 
