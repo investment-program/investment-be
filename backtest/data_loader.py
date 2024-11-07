@@ -6,7 +6,7 @@ import FinanceDataReader as fdr
 import pandas as pd
 from dotenv import load_dotenv
 from pykrx import stock
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from backtest.portfolio import Portfolio
@@ -17,7 +17,7 @@ load_dotenv()
 class DataLoader:
     def __init__(self, db_path=None):
         # 환경변수에서 DB 경로를 읽어옴
-        self.db_path = self._get_db_path()
+        self.db_path = self.get_db_path()
 
         if not self.db_path:
             raise ValueError("DATABASE_URL 또는 DB_PATH 환경 변수가 설정되지 않았습니다.")
@@ -38,7 +38,7 @@ class DataLoader:
         # SQLAlchemy 세션 생성
         self.Session = sessionmaker(bind=self.engine)
 
-    def _get_db_path(self):
+    def get_db_path(self):
         if os.getenv("ENV") == "local":
             return os.getenv("DB_PATH")
         else:
@@ -95,33 +95,33 @@ class DataLoader:
         max_volatility: float,
     ) -> pd.DataFrame:
         """DB에서 조건을 만족하는 종목 로드"""
-        query = """
-        SELECT 
-            code, 
-            name, 
-            annual_return, 
-            volatility, 
-            dividend_yield, 
-            liquidity
-        FROM stock_analysis
-        WHERE dividend_yield >= ?
-            AND liquidity >= ?
-            AND volatility <= ?
-        ORDER BY annual_return DESC
-        LIMIT ?
-        """
+        query = text("""
+                SELECT 
+                    code, 
+                    name, 
+                    annual_return, 
+                    volatility, 
+                    dividend_yield, 
+                    liquidity
+                FROM stock_analysis
+                WHERE dividend_yield >= :min_dividend
+                    AND liquidity >= :min_liquidity
+                    AND volatility <= :max_volatility
+                ORDER BY annual_return DESC
+                LIMIT :limit
+                """)
 
         # SQLAlchemy 엔진을 사용하여 쿼리 실행
         with self.engine.connect() as conn:
             df = pd.read_sql(
                 query,
                 conn,
-                params=(
-                    min_dividend,
-                    min_liquidity * 1_000_000,  # 백만원 → 원
-                    max_volatility,
-                    limit,
-                ),
+                params={
+                    "min_dividend": min_dividend,
+                    "min_liquidity": min_liquidity * 1_000_000,  # 백만원 → 원
+                    "max_volatility": max_volatility,
+                    "limit": limit,
+                },
             )
 
         if df.empty:
