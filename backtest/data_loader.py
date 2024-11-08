@@ -65,7 +65,7 @@ class DataLoader:
         valid_stocks = {}
         for _, row in stock_data.iterrows():
             try:
-                df = self._fetch_stock_price(row["code"], portfolio)
+                df = self.fetch_stock_price(row["code"], portfolio)
 
                 if df is not None and not df.empty and not df["Close"].isna().any():
                     valid_stocks[row["code"]] = df["Close"]
@@ -85,7 +85,7 @@ class DataLoader:
         # 데이터 저장
         portfolio.stock_prices = pd.DataFrame(valid_stocks)
         portfolio.stock_info = stock_data[stock_data["code"].isin(valid_stocks.keys())]
-        portfolio.benchmark = self._fetch_benchmark_data(portfolio)
+        portfolio.benchmark = self.fetch_benchmark_data(portfolio)
 
     def _load_db_data(
         self,
@@ -141,7 +141,7 @@ class DataLoader:
 
         return df
 
-    def _fetch_stock_price(
+    def fetch_stock_price(
         self, code: str, portfolio: Portfolio
     ) -> Optional[pd.DataFrame]:
         """개별 종목 주가 데이터 수집"""
@@ -161,7 +161,7 @@ class DataLoader:
             print(f"주가 데이터 수집 실패 ({code}): {str(e)}")
             return None
 
-    def _fetch_benchmark_data(self, portfolio: Portfolio) -> pd.Series:
+    def fetch_benchmark_data(self, portfolio: Portfolio) -> pd.Series:
         """벤치마크(KOSPI) 데이터 수집"""
         start = datetime.strptime(portfolio.start_date, "%Y-%m-%d")
         end = datetime.strptime(portfolio.end_date, "%Y-%m-%d")
