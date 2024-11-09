@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.condition import condition_router
+from app.config import add_cors_middleware
 from app.run_backtest import backtest_router
 
 app = FastAPI()
@@ -12,6 +13,9 @@ async def root():
 async def say_hello(name: str):
     return {"message": f"Hello {name}"}
 
+add_cors_middleware(app)
+
 app.include_router(condition_router)
 
 app.include_router(backtest_router)
+
