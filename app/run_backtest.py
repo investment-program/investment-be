@@ -2,7 +2,7 @@ from typing import Dict, Any
 
 from fastapi import APIRouter, HTTPException
 
-from app.schemas import BacktestRequest, BacktestResponse, BacktestResponsee
+from app.schemas import BacktestRequest, BacktestResponse
 from backtest.portfolio import Portfolio
 from backtest.backtest_engine import BacktestEngine
 from backtest.data_loader import DataLoader
@@ -77,25 +77,25 @@ def run_backtest_api(
 
 
 # API 엔드포인트 정의
+# @backtest_router.post("/run-backtest", response_model=BacktestResponse, summary = "백테스팅 결과 생성")
+# async def run_backtest(request: BacktestRequest, ):
+#     condition = request.condition
+#     portfolio, results = run_backtest_api(
+#         n_stocks=condition.n_stock,
+#         min_dividend=condition.min_dividend,
+#         max_volatility=request.max_volatility,
+#         target_return=request.target_return,
+#         backtesting_period=condition.backtesting_period
+#     )
+#
+#     if portfolio and results:
+#         return {
+#             "portfolio": portfolio,  # 필요 시 실제 포트폴리오 데이터를 JSON 직렬화하여 반환
+#             "results": results
+#         }
+#     else:
+#         raise HTTPException(status_code=500, detail="백테스트 실행 중 오류가 발생했습니다.")
 @backtest_router.post("/run-backtest", response_model=BacktestResponse, summary = "백테스팅 결과 생성")
-async def run_backtest(request: BacktestRequest, ):
-    condition = request.condition
-    portfolio, results = run_backtest_api(
-        n_stocks=condition.n_stock,
-        min_dividend=condition.min_dividend,
-        max_volatility=request.max_volatility,
-        target_return=request.target_return,
-        backtesting_period=condition.backtesting_period
-    )
-
-    if portfolio and results:
-        return {
-            "portfolio": portfolio,  # 필요 시 실제 포트폴리오 데이터를 JSON 직렬화하여 반환
-            "results": results
-        }
-    else:
-        raise HTTPException(status_code=500, detail="백테스트 실행 중 오류가 발생했습니다.")
-@backtest_router.post("/run-backtestt", response_model=BacktestResponsee, summary = "백테스팅 결과 생성")
 async def run_backtest(request: BacktestRequest, ):
     condition = request.condition
     response_data  = run_backtest_api(

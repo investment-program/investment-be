@@ -24,13 +24,13 @@ class BacktestRequest(BaseModel):
     max_volatility: float
     target_return: float
 
-class BacktestResponse(BaseModel):
-    portfolio: Dict
-    results: Dict
-    condition: Optional[str] = None
-    max_volatility: Optional[float] = None
-    target_return: Optional[float] = None
+# class BacktestResponse(BaseModel):
+#     portfolio: Dict
+#     results: Dict
+#     condition: Optional[str] = None
+#     max_volatility: Optional[float] = None
+#     target_return: Optional[float] = None
 
-class BacktestResponsee(BaseModel):
+class BacktestResponse(BaseModel):
     portfolio: Any  # JSON 직렬화된 포트폴리오 데이터 형식으로 수정
     results: Any    # JSON 직렬화된 백테스트 결과 데이터 형식으로 수정
