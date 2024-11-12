@@ -1,5 +1,4 @@
-from typing import Dict, Optional, Any
-
+from typing import Dict, Optional, Any, List
 from pydantic import BaseModel
 
 class BacktestingPeriod(BaseModel):
@@ -14,23 +13,51 @@ class Condition(BaseModel):
     investment_style: str
     backtesting_period: BacktestingPeriod
 
-class ResponseModel(BaseModel):
-    condition: Condition
-    max_volatility: float
-    target_return: float
-
+# 백테스트 요청 모델 및 조건 응답 모델
 class BacktestRequest(BaseModel):
-    condition: Condition
-    max_volatility: float
-    target_return: float
+    condition: Condition  # 조건을 포함
+    max_volatility: float  # max_volatility는 BacktestRequest 레벨에서 정의
+    target_return: float   # target_return도 BacktestRequest 레벨에서 정의
 
-# class BacktestResponse(BaseModel):
-#     portfolio: Dict
-#     results: Dict
-#     condition: Optional[str] = None
-#     max_volatility: Optional[float] = None
-#     target_return: Optional[float] = None
+# 포트폴리오 구성을 정의하는 모델
+class PortfolioComposition(BaseModel):
+    code: str
+    name: str
+    weight: float
+    dividend_yield: float
 
+# 포트폴리오 성과 지표 모델
+class PortfolioMetrics(BaseModel):
+    composition: List[PortfolioComposition]  # composition 리스트가 포함
+    final_value: float
+    total_return: float
+    annual_volatility: float
+    sharpe_ratio: float
+    max_drawdown: float
+    win_rate: float
+
+# 벤치마크 성과 지표 모델
+class BenchmarkMetrics(BaseModel):
+    final_value: float
+    total_return: float
+    annual_volatility: float
+
+# 개별 종목 성과 모델
+class IndividualStockPerformance(BaseModel):
+    code: str
+    name: str
+    return_: float
+    volatility: float
+
+# 시각화 데이터 모델
+class Visualizations(BaseModel):
+    value_changes: str
+    composition: str
+    risk_return: str
+
+# 백테스트 응답 전체 모델
 class BacktestResponse(BaseModel):
-    portfolio: Any  # JSON 직렬화된 포트폴리오 데이터 형식으로 수정
-    results: Any    # JSON 직렬화된 백테스트 결과 데이터 형식으로 수정
+    portfolio: PortfolioMetrics  # PortfolioMetrics 모델을 사용하는 응답
+    benchmark: BenchmarkMetrics
+    individual_stocks: List[IndividualStockPerformance]
+    visualizations: Visualizations

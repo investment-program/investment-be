@@ -150,12 +150,6 @@ class DataLoader:
             df = fdr.DataReader(
                 formatted_code, portfolio.start_date, portfolio.end_date
             )
-
-            # 데이터 유효성 검증
-            if df is None or df.empty or df["Close"].isna().all():
-                print(f"[제외] {code}: 유효하지 않은 주가 데이터")
-                return None
-
             return df
         except Exception as e:
             print(f"주가 데이터 수집 실패 ({code}): {str(e)}")
