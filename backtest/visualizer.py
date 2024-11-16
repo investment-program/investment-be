@@ -17,7 +17,7 @@ class BacktestVisualizer:
         """시각화 스타일 설정"""
         plt.style.use("seaborn-v0_8-darkgrid")
         sns.set_theme()
-        plt.rcParams["font.family"] = "Malgun Gothic"
+        plt.rcParams["font.family"] = "NanumGothic"
         plt.rcParams["axes.unicode_minus"] = False
 
     def generate_results(self, backtest_results: Dict) -> Dict:
