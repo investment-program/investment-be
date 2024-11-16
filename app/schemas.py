@@ -14,11 +14,16 @@ class Condition(BaseModel):
     investment_style: str
     backtesting_period: BacktestingPeriod
 
-# 백테스트 요청 모델 및 조건 응답 모델
-class BacktestRequest(BaseModel):
-    condition: Condition  # 조건을 포함
-    max_volatility: float  # max_volatility는 BacktestRequest 레벨에서 정의
-    target_return: float   # target_return도 BacktestRequest 레벨에서 정의
+# 조건-백테스트 요청 모델 및 조건 응답 모델
+class ConditionBacktestRequest(BaseModel):
+    condition: Condition
+    max_volatility: float
+    target_return: float
+
+class InputBacktestRequest(BaseModel):
+    stock_names: List[str]
+    backtesting_period: BacktestingPeriod
+
 
 # 포트폴리오 구성을 정의하는 모델
 class PortfolioComposition(BaseModel):
