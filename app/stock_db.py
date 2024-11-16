@@ -1,7 +1,7 @@
 import os
 from typing import List
 from fastapi import APIRouter, HTTPException
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text  # text 추가
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
@@ -31,17 +31,16 @@ class PostgreSQLConnection:
         """SQLAlchemy 세션 반환"""
         return self.Session()
 
-    def query_db(self, query: str, params: tuple = ()) -> List[dict]:
+    def query_db(self, query: str, params: dict = {}) -> List[dict]:
         """PostgreSQL에서 쿼리를 실행하고 결과를 반환"""
         try:
             # PostgreSQL에서 SQLAlchemy를 통해 쿼리 실행
-            conn = self.engine.connect()
-            result = conn.execute(query, params)
-            rows = result.fetchall()
-            conn.close()
+            with self.engine.connect() as conn:
+                result = conn.execute(text(query), params)  # text()로 래핑
+                rows = result.fetchall()
 
             if rows:
-                return [dict(row) for row in rows]  # 결과를 딕셔너리 형태로 반환
+                return [dict(row._mapping) for row in rows]  # ._mapping으로 딕셔너리 변환
             else:
                 return []  # 결과가 없으면 빈 리스트 반환
         except Exception as e:
