@@ -1,4 +1,5 @@
-from typing import Dict, Optional, Any, List
+from typing import List
+
 from pydantic import BaseModel
 
 class BacktestingPeriod(BaseModel):
@@ -13,37 +14,6 @@ class Condition(BaseModel):
     investment_style: str
     backtesting_period: BacktestingPeriod
 
-# 조건-백테스트 요청 모델 및 조건 응답 모델
-class ConditionBacktestRequest(BaseModel):
-    condition: Condition
-    max_volatility: float
-    target_return: float
-
-class InputBacktestRequest(BaseModel):
-    condition: Condition
-
-# 포트폴리오 구성을 정의하는 모델
-class PortfolioComposition(BaseModel):
-    code: str
-    name: str
-    weight: float
-    dividend_yield: float
-
-# 포트폴리오 성과 지표 모델
-class PortfolioMetrics(BaseModel):
-    composition: List[PortfolioComposition]  # composition 리스트가 포함
-    final_value: float
-    total_return: float
-    annual_volatility: float
-    sharpe_ratio: float
-    max_drawdown: float
-    win_rate: float
-
-# 벤치마크 성과 지표 모델
-class BenchmarkMetrics(BaseModel):
-    final_value: float
-    total_return: float
-    annual_volatility: float
 # 백테스트 요청 모델 및 조건 응답 모델
 class BacktestRequest(BaseModel):
     condition: Condition  # 조건을 포함

@@ -1,17 +1,11 @@
 from typing import Dict, Any, Union, Optional
-from typing import Dict, Union, Optional
 
 from fastapi import APIRouter, HTTPException
-
-from app.schemas import BacktestResponse, ConditionBacktestRequest
-from app.schemas import PortfolioMetrics, PortfolioComposition, BenchmarkMetrics, IndividualStockPerformance, \
-    Visualizations
 from app.schemas import BacktestRequest, BacktestResponse
 from backtest.portfolio import Portfolio
 from backtest.backtest_engine import BacktestEngine
 from backtest.data_loader import DataLoader
 from backtest.optimizer import PortfolioOptimizer
-from backtest.portfolio import Portfolio
 from backtest.visualizer import BacktestVisualizer
 from app.schemas import PortfolioMetrics, PortfolioComposition, BenchmarkMetrics, IndividualStockPerformance, \
     Visualizations
@@ -144,8 +138,6 @@ def run_backtest_api(
 
 
 # API 엔드포인트 정의
-@backtest_router.post("/run-backtest", response_model=BacktestResponse, summary="백테스팅 결과 생성")
-async def run_backtest(request: ConditionBacktestRequest):
 @backtest_router.post("/run-backtest", response_model=BacktestResponse, summary="백테스팅 결과 생성")
 async def run_backtest(request: BacktestRequest):
     condition = request.condition
