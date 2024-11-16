@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime
-from app.schemas import Condition, BacktestRequest
+from app.schemas import Condition, ConditionBacktestRequest
 
 condition_router = APIRouter()
 
 START_YEAR = 1966
 
-@condition_router.post("/condition", response_model=BacktestRequest, summary="분산 투자를 위한 조건 생성")
+@condition_router.post("/condition", response_model=ConditionBacktestRequest, summary="분산 투자를 위한 조건 생성")
 async def create_condition(request: Condition):
     current_year = datetime.now().year
 
@@ -55,7 +55,7 @@ async def create_condition(request: Condition):
     if request.backtesting_period.end_month < 1 or request.backtesting_period.end_month > 12:
         raise HTTPException(status_code=400, detail="종료 월은 1부터 12 사이여야 합니다.")
 
-    return BacktestRequest(
+    return ConditionBacktestRequest(
         condition=request,
         max_volatility=max_volatility,
         target_return=target_return

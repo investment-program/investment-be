@@ -1,14 +1,16 @@
-from typing import Dict, Any, Union, Optional
+import calendar
+from typing import Dict, Union, Optional
 
 from fastapi import APIRouter, HTTPException
-from app.schemas import BacktestRequest, BacktestResponse
-from backtest.portfolio import Portfolio
+
+from app.schemas import BacktestResponse, ConditionBacktestRequest
+from app.schemas import PortfolioMetrics, PortfolioComposition, BenchmarkMetrics, IndividualStockPerformance, \
+    Visualizations
 from backtest.backtest_engine import BacktestEngine
 from backtest.data_loader import DataLoader
 from backtest.optimizer import PortfolioOptimizer
+from backtest.portfolio import Portfolio
 from backtest.visualizer import BacktestVisualizer
-from app.schemas import PortfolioMetrics, PortfolioComposition, BenchmarkMetrics, IndividualStockPerformance, \
-    Visualizations
 
 backtest_router = APIRouter()
 
@@ -139,17 +141,28 @@ def run_backtest_api(
 
 # API 엔드포인트 정의
 @backtest_router.post("/run-backtest", response_model=BacktestResponse, summary="백테스팅 결과 생성")
-async def run_backtest(request: BacktestRequest):
+async def run_backtest(request: ConditionBacktestRequest):
     condition = request.condition
+
+    start_date = f"{condition.backtesting_period.start_year}-{condition.backtesting_period.start_month:02d}-01"
+    end_date = get_end_date(condition.backtesting_period.end_year, condition.backtesting_period.end_month)
+
     response_data = run_backtest_api(
         n_stocks=condition.n_stock,
+        start_date = start_date,
+        end_date = end_date,
         min_dividend=condition.min_dividend,
-        max_volatility=request.max_volatility,  # 여기서 max_volatility에 접근
-        target_return=request.target_return,  # target_return에 접근
-        # 다른 필요한 인자들 추가
+        max_volatility=request.max_volatility,
+        target_return=request.target_return
     )
 
     if response_data:
         return response_data
     else:
         raise HTTPException(status_code=500, detail="백테스트 실행 중 오류가 발생했습니다.")
+
+
+
+def get_end_date(year: int, month: int) -> str:
+    last_day = calendar.monthrange(year, month)[1]
+    return f"{year}-{month:02d}-{last_day:02d}"
