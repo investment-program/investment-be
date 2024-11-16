@@ -21,7 +21,7 @@ app.include_router(condition_router)
 
 app.include_router(backtest_router)
 
-app.include_router(specific_router)
+# app.include_router(specific_router)
 
 app.include_router(stocks_router)
 
