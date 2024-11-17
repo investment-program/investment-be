@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # FastAPI 라우터 설정
-stocks_db_router = APIRouter()
+prod_stocks_router = APIRouter()
 
 # 환경 변수에서 PostgreSQL URL 가져오기
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -53,7 +53,7 @@ db_connection = PostgreSQLConnection()
 
 
 # 종목 검색 API
-@stocks_db_router.get("/db/stocks/search/{name}", summary="서버) 종목 입력")
+@prod_stocks_router.get("/stocks/search/{name}", summary="검색어 종목 입력")
 async def search_stocks(name: str):
     """사용자가 입력한 종목명에 맞는 종목 목록을 반환하는 API"""
     name = name.strip()
@@ -62,7 +62,7 @@ async def search_stocks(name: str):
         raise HTTPException(status_code=400, detail="종목명을 입력해 주세요.")
 
     query = """
-        SELECT * FROM stock_analysis WHERE name LIKE :name
+        SELECT name FROM stock_analysis WHERE name LIKE :name
     """
 
     # 검색할 때 입력된 이름을 포함하는 종목들을 검색
@@ -75,7 +75,7 @@ async def search_stocks(name: str):
 
 
 # 모든 종목명 반환 API
-@stocks_db_router.get("/db/stocks/all", response_model=List[str], summary="서버) 모든 종목명 반환")
+@prod_stocks_router.get("/stocks/all", response_model=List[str], summary="모든 종목 리스트")
 async def get_all_stocks():
     """데이터베이스에 존재하는 모든 종목명을 반환하는 API"""
 

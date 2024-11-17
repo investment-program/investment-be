@@ -4,8 +4,7 @@ from app.condition import condition_router
 from app.config import add_cors_middleware
 from app.run_backtest import backtest_router
 from app.specific_backtest import specific_router
-from app.stock_db import stocks_db_router
-from app.stocks import stocks_router
+from app.stock_db import prod_stocks_router
 
 app = FastAPI()
 add_cors_middleware(app)
@@ -23,6 +22,6 @@ app.include_router(backtest_router)
 
 app.include_router(specific_router)
 
-app.include_router(stocks_router)
+# app.include_router(stocks_router)
 
-app.include_router(stocks_db_router)
+app.include_router(prod_stocks_router)
