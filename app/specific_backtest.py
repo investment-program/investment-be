@@ -27,7 +27,7 @@ async def specific_backtest(
         target_return: float = 0.05,
         risk_free_rate: float = 0.03,
         # db_path: str = "/data/stock_data.db"
-        db_path: str = "/Users/daeun/toyproject/stock_investment/data/stock_data.db"
+        db_path: str = "data/stock_data.db",
 ) -> Union[BacktestResponse, dict[str, Optional[str]]]:
     try:
         # 1. 포트폴리오 초기화
@@ -38,21 +38,19 @@ async def specific_backtest(
         # 2. 데이터 로드
         data_loader = DataLoader(db_path)
         print("!!", data_loader.db_path)
-        if "/Users/" in data_loader.db_path:
-            print("요기")
-            # 종목명으로 종목 코드 조회
-            with sqlite3.connect(db_path) as conn:
-                placeholders = ",".join(["?" for _ in stock_names])
+        if "postgresql" in data_loader.db_path:
+            with psycopg2.connect(db_path) as conn:
+                placeholders = ",".join(["%s" for _ in stock_names])  # PostgreSQL에서는 %s를 사용
                 query = f"""
                     SELECT code, name, dividend_yield, liquidity
                     FROM stock_analysis
                     WHERE name IN ({placeholders})
                 """
-                stock_data = pd.read_sql(query, conn, params=stock_names)
-                print("Loaded stock data:", stock_data)
-        elif "postgresql" in data_loader.db_path:
-            with psycopg2.connect(db_path) as conn:
-                placeholders = ",".join(["%s" for _ in stock_names])  # PostgreSQL에서는 %s를 사용
+        else:
+            print("요기")
+            # 종목명으로 종목 코드 조회
+            with sqlite3.connect(db_path) as conn:
+                placeholders = ",".join(["?" for _ in stock_names])
                 query = f"""
                     SELECT code, name, dividend_yield, liquidity
                     FROM stock_analysis
