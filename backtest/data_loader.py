@@ -1,6 +1,7 @@
 import os
+import sqlite3
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 import FinanceDataReader as fdr
 import pandas as pd
@@ -27,6 +28,8 @@ class DataLoader:
             self.db_path = self.db_path
         elif self.db_path.startswith("postgresql://"):
             self.db_path = self.db_path
+        elif self.db_path.startswith("/Users/"):
+            self.db_path = f"sqlite:///{self.db_path}"
         else:
             raise ValueError(f"지원되지 않는 DB 경로 형식: {self.db_path}")
 
@@ -48,24 +51,30 @@ class DataLoader:
             self,
             portfolio: Portfolio,
             n_stocks: int = 5,
+            stock_codes: List[str] = None,
             min_dividend: float = 2.0,
             min_liquidity: float = 500,
             max_volatility: float = 40.0,
     ) -> None:
         """주식 데이터 로드"""
-        # DB에서 기본 데이터 로드
-        stock_data = self._load_db_data(
-            limit=n_stocks,
-            min_dividend=min_dividend,
-            min_liquidity=min_liquidity,
-            max_volatility=max_volatility,
-        )
+
+        if stock_codes:
+            self.db_path = "/Users/daeun/toyproject/stock_investment/data/stock_data.db"
+            stock_data = self._load_specific_stocks(stock_codes)
+
+        else:
+            stock_data = self._load_db_data(
+                limit=n_stocks,
+                min_dividend=min_dividend,
+                min_liquidity=min_liquidity,
+                max_volatility=max_volatility,
+            )
 
         # 주가 데이터 수집
         valid_stocks = {}
         for _, row in stock_data.iterrows():
             try:
-                df = self.fetch_stock_price(row["code"], portfolio)
+                df = self._fetch_stock_price(row["code"], portfolio)
 
                 if df is not None and not df.empty and not df["Close"].isna().any():
                     valid_stocks[row["code"]] = df["Close"]
@@ -85,14 +94,64 @@ class DataLoader:
         # 데이터 저장
         portfolio.stock_prices = pd.DataFrame(valid_stocks)
         portfolio.stock_info = stock_data[stock_data["code"].isin(valid_stocks.keys())]
-        portfolio.benchmark = self.fetch_benchmark_data(portfolio)
+        portfolio.benchmark = self._fetch_benchmark_data(portfolio)
+
+    def _load_specific_stocks(self, stock_codes: List[str]) -> pd.DataFrame:
+        """특정 종목들의 데이터를 DB에서 로드"""
+        print("sdv", self.db_path)
+        try:
+            # 데이터베이스 연결
+            with sqlite3.connect(self.db_path) as conn:
+                placeholders = ",".join(["?" for _ in stock_codes])
+                query = f"""
+                    SELECT 
+                        code, 
+                        name, 
+                        annual_return, 
+                        volatility, 
+                        dividend_yield, 
+                        liquidity
+                    FROM stock_analysis
+                    WHERE code IN ({placeholders})
+                """
+                print(f"Executing query: {query}")
+                print(f"With params: {stock_codes}")
+
+                # 데이터 로드
+                df = pd.read_sql(query, conn, params=stock_codes)
+
+            # 빈 데이터 처리
+            if df.empty:
+                raise ValueError(f"지정된 종목 코드에 대한 데이터를 찾을 수 없습니다: {stock_codes}")
+
+            print(f"Loaded DataFrame:\n{df}")
+            return df
+
+        except sqlite3.OperationalError as e:
+            print(f"DB 파일 열기 오류: {str(e)}")
+            raise ValueError(f"데이터베이스 파일을 열 수 없습니다. 경로를 확인하십시오: {self.db_path}")
+
+        except Exception as e:
+            print(f"예상치 못한 오류: {str(e)}")
+            raise
+
+
+        print(f"\n=== 선택된 종목 ({len(df)}개) ===")
+        for _, row in df.iterrows():
+            print(f"{row['code']} ({row['name']}):")
+            print(f"  배당수익률: {row['dividend_yield']:.1f}%")
+            print(f"  일평균거래대금: {row['liquidity'] / 1_000_000:.0f}백만원")
+            print(f"  변동성: {row['volatility']:.1f}%")
+
+        return df
+
 
     def _load_db_data(
-        self,
-        limit: int,
-        min_dividend: float,
-        min_liquidity: float,
-        max_volatility: float,
+            self,
+            limit: int,
+            min_dividend: float,
+            min_liquidity: float,
+            max_volatility: float,
     ) -> pd.DataFrame:
         """DB에서 조건을 만족하는 종목 로드"""
         query = text("""
@@ -141,8 +200,8 @@ class DataLoader:
 
         return df
 
-    def fetch_stock_price(
-        self, code: str, portfolio: Portfolio
+    def _fetch_stock_price(
+            self, code: str, portfolio: Portfolio
     ) -> Optional[pd.DataFrame]:
         """개별 종목 주가 데이터 수집"""
         try:
@@ -155,7 +214,7 @@ class DataLoader:
             print(f"주가 데이터 수집 실패 ({code}): {str(e)}")
             return None
 
-    def fetch_benchmark_data(self, portfolio: Portfolio) -> pd.Series:
+    def _fetch_benchmark_data(self, portfolio: Portfolio) -> pd.Series:
         """벤치마크(KOSPI) 데이터 수집"""
         start = datetime.strptime(portfolio.start_date, "%Y-%m-%d")
         end = datetime.strptime(portfolio.end_date, "%Y-%m-%d")
