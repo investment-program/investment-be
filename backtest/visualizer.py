@@ -6,6 +6,10 @@ from typing import Dict, Tuple
 from io import BytesIO
 import base64
 from backtest.portfolio import Portfolio
+import matplotlib as mpl
+import matplotlib.font_manager as fm
+import platform
+import os
 
 
 class BacktestVisualizer:
@@ -17,8 +21,100 @@ class BacktestVisualizer:
         """시각화 스타일 설정"""
         plt.style.use("seaborn-v0_8-darkgrid")
         sns.set_theme()
-        plt.rcParams["font.family"] = "NanumGothic"
-        plt.rcParams["axes.unicode_minus"] = False
+
+        # 기본 폰트 패밀리 설정
+        mpl.rcParams["font.family"] = ["sans-serif"]
+        mpl.rcParams["font.sans-serif"] = []
+
+        # 운영체제별 기본 폰트 설정
+        os_system = platform.system()
+        if os_system == "Windows":
+            font_names = [
+                "Malgun Gothic",
+                "맑은 고딕",
+                "NanumGothic",
+                "NanumBarunGothic",
+                "Gulim",
+            ]
+        elif os_system == "Darwin":  # macOS
+            font_names = [
+                "AppleGothic",
+                "Apple SD Gothic Neo",
+                "NanumGothic",
+                "NanumBarunGothic",
+            ]
+        else:  # Linux 등
+            font_names = ["NanumGothic", "NanumBarunGothic", "UnDotum", "UnBatang"]
+
+        # 프로젝트 내 fonts 디렉토리 체크
+        local_font_dir = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "fonts"
+        )
+        if os.path.exists(local_font_dir):
+            # fonts 디렉토리의 모든 폰트 파일을 폰트 매니저에 추가
+            font_files = []
+            for file in os.listdir(local_font_dir):
+                if file.lower().endswith((".ttf", ".otf")):
+                    font_path = os.path.join(local_font_dir, file)
+                    try:
+                        fm.fontManager.addfont(font_path)
+                        font_files.append(file)
+                    except:
+                        print(f"폰트 파일 로드 실패: {file}")
+            if font_files:
+                print(f"로컬 폰트 로드 완료: {', '.join(font_files)}")
+
+        # 우선순위에 따라 폰트 시도
+        font_found = False
+        for font_name in font_names:
+            try:
+                font_path = fm.findfont(font_name)
+                if font_path and os.path.exists(font_path):
+                    mpl.rcParams["font.sans-serif"].insert(0, font_name)
+                    print(f"한글 폰트 설정 완료: {font_name} ({font_path})")
+                    font_found = True
+                    break
+            except:
+                continue
+
+        if not font_found:
+            # 시스템에서 사용 가능한 한글 폰트 검색
+            for font in fm.fontManager.ttflist:
+                if any(
+                        keyword in font.name.lower()
+                        for keyword in [
+                            "gothic",
+                            "gungsuh",
+                            "고딕",
+                            "gulim",
+                            "굴림",
+                            "dotum",
+                            "돋움",
+                        ]
+                ):
+                    mpl.rcParams["font.sans-serif"].insert(0, font.name)
+                    print(f"대체 한글 폰트 설정: {font.name}")
+                    font_found = True
+                    break
+
+        if not font_found:
+            print("Warning: 한글 폰트를 찾을 수 없습니다. 기본 폰트를 사용합니다.")
+            mpl.rcParams["font.sans-serif"].insert(0, "DejaVu Sans")
+
+        # 마이너스 기호 깨짐 방지
+        mpl.rcParams["axes.unicode_minus"] = False
+
+        # 폰트 캐시 재생성
+        try:
+            fm._rebuild()
+            print("폰트 캐시 재생성 완료")
+        except:
+            print("폰트 캐시 재생성 실패")
+
+        # 현재 폰트 설정 출력
+        print(f"운영체제: {os_system}")
+        print(f"현재 폰트 패밀리: {mpl.rcParams['font.family']}")
+        print(f"현재 sans-serif 폰트: {mpl.rcParams['font.sans-serif']}")
 
     def generate_results(self, backtest_results: Dict) -> Dict:
         """백테스트 결과를 시각화하고 성과지표를 계산하여 반환"""
