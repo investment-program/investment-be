@@ -59,7 +59,8 @@ class DataLoader:
         """주식 데이터 로드"""
 
         if stock_codes:
-            self.db_path = "/Users/daeun/toyproject/stock_investment/data/stock_data.db"
+            if "/Users/" in self.db_path:
+                self.db_path = "/Users/daeun/toyproject/stock_investment/data/stock_data.db"
             stock_data = self._load_specific_stocks(stock_codes)
 
         else:
@@ -98,12 +99,10 @@ class DataLoader:
 
     def _load_specific_stocks(self, stock_codes: List[str]) -> pd.DataFrame:
         """특정 종목들의 데이터를 DB에서 로드"""
-        print("sdv", self.db_path)
-        try:
-            # 데이터베이스 연결
-            with sqlite3.connect(self.db_path) as conn:
-                placeholders = ",".join(["?" for _ in stock_codes])
-                query = f"""
+        if self.engine:  # PostgreSQL 또는 SQLAlchemy 엔진이 제공된 경우
+            try:
+                placeholders = ", ".join([f":code_{i}" for i in range(len(stock_codes))])
+                query = text(f"""
                     SELECT 
                         code, 
                         name, 
@@ -113,37 +112,63 @@ class DataLoader:
                         liquidity
                     FROM stock_analysis
                     WHERE code IN ({placeholders})
-                """
-                print(f"Executing query: {query}")
-                print(f"With params: {stock_codes}")
+                """)
 
-                # 데이터 로드
-                df = pd.read_sql(query, conn, params=stock_codes)
+                # 매개변수를 딕셔너리로 준비
+                params = {f"code_{i}": code for i, code in enumerate(stock_codes)}
 
-            # 빈 데이터 처리
-            if df.empty:
-                raise ValueError(f"지정된 종목 코드에 대한 데이터를 찾을 수 없습니다: {stock_codes}")
+                with self.engine.connect() as conn:
+                    df = pd.read_sql(query, conn, params=params)
 
-            print(f"Loaded DataFrame:\n{df}")
-            return df
+                if df.empty:
+                    raise ValueError(f"지정된 종목 코드에 대한 데이터를 찾을 수 없습니다: {stock_codes}")
 
-        except sqlite3.OperationalError as e:
-            print(f"DB 파일 열기 오류: {str(e)}")
-            raise ValueError(f"데이터베이스 파일을 열 수 없습니다. 경로를 확인하십시오: {self.db_path}")
+                print(f"Loaded DataFrame:\n{df}")
+                return df
 
-        except Exception as e:
-            print(f"예상치 못한 오류: {str(e)}")
-            raise
+            except Exception as e:
+                print(f"PostgreSQL 로드 중 오류 발생: {str(e)}")
+                raise
 
+        elif self.db_path:  # SQLite를 사용하는 경우
+            try:
+                with sqlite3.connect(self.db_path) as conn:
+                    placeholders = ",".join(["?" for _ in stock_codes])
+                    query = f"""
+                        SELECT 
+                            code, 
+                            name, 
+                            annual_return, 
+                            volatility, 
+                            dividend_yield, 
+                            liquidity
+                        FROM stock_analysis
+                        WHERE code IN ({placeholders})
+                    """
+                    print(f"Executing query: {query}")
+                    print(f"With params: {stock_codes}")
 
-        print(f"\n=== 선택된 종목 ({len(df)}개) ===")
-        for _, row in df.iterrows():
-            print(f"{row['code']} ({row['name']}):")
-            print(f"  배당수익률: {row['dividend_yield']:.1f}%")
-            print(f"  일평균거래대금: {row['liquidity'] / 1_000_000:.0f}백만원")
-            print(f"  변동성: {row['volatility']:.1f}%")
+                    # 데이터 로드
+                    df = pd.read_sql(query, conn, params=stock_codes)
 
-        return df
+                if df.empty:
+                    raise ValueError(f"지정된 종목 코드에 대한 데이터를 찾을 수 없습니다: {stock_codes}")
+
+                print(f"\n=== 선택된 종목 ({len(df)}개) ===")
+                for _, row in df.iterrows():
+                    print(f"{row['code']} ({row['name']}):")
+                    print(f"  배당수익률: {row['dividend_yield']:.1f}%")
+                    print(f"  일평균거래대금: {row['liquidity'] / 1_000_000:.0f}백만원")
+                    print(f"  변동성: {row['volatility']:.1f}%")
+
+                return df
+
+            except Exception as e:
+                print(f"SQLite 로드 중 오류 발생: {str(e)}")
+                raise
+
+        else:
+            raise ValueError("데이터베이스 경로 또는 엔진이 설정되지 않았습니다.")
 
 
     def _load_db_data(

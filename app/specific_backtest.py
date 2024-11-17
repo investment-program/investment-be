@@ -5,6 +5,7 @@ from typing import List, Union, Optional
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException
+import psycopg2
 
 from app.schemas import InputBacktestRequest, BacktestResponse
 from app.schemas import PortfolioMetrics, PortfolioComposition, BenchmarkMetrics, \
@@ -37,16 +38,30 @@ async def specific_backtest(
         # 2. 데이터 로드
         data_loader = DataLoader(db_path)
 
-        # 종목명으로 종목 코드 조회
-        with sqlite3.connect(db_path) as conn:
-            placeholders = ",".join(["?" for _ in stock_names])
-            query = f"""
-                SELECT code, name, dividend_yield, liquidity
-                FROM stock_analysis
-                WHERE name IN ({placeholders})
-            """
-            stock_data = pd.read_sql(query, conn, params=stock_names)
-            print("Loaded stock data:", stock_data)
+        if "/Users/" in data_loader.get_db_path():
+            print("요기")
+            # 종목명으로 종목 코드 조회
+            with sqlite3.connect(db_path) as conn:
+                placeholders = ",".join(["?" for _ in stock_names])
+                query = f"""
+                    SELECT code, name, dividend_yield, liquidity
+                    FROM stock_analysis
+                    WHERE name IN ({placeholders})
+                """
+                stock_data = pd.read_sql(query, conn, params=stock_names)
+                print("Loaded stock data:", stock_data)
+        elif "postgresql" in data_loader.get_db_path():
+            with psycopg2.connect(db_path) as conn:
+                placeholders = ",".join(["%s" for _ in stock_names])  # PostgreSQL에서는 %s를 사용
+                query = f"""
+                    SELECT code, name, dividend_yield, liquidity
+                    FROM stock_analysis
+                    WHERE name IN ({placeholders})
+                """
+
+        # DataFrame에 쿼리 결과를 로드
+        stock_data = pd.read_sql(query, conn, params=stock_names)
+        print("Loaded stock data:", stock_data)
 
         if len(stock_data) != len(stock_names):
             missing_stocks = set(stock_names) - set(stock_data["name"])
