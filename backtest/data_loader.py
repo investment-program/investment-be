@@ -17,35 +17,34 @@ load_dotenv()
 
 class DataLoader:
     def __init__(self, db_path=None):
-        # 환경변수에서 DB 경로를 읽어옴
-        self.db_path = self.get_db_path()
+        """초기화 메서드: 데이터베이스 경로 설정 및 SQLAlchemy 엔진 생성"""
+        # 환경변수에서 DB 경로를 읽거나 인자로 전달된 경로를 사용
+        self.db_path = db_path or os.getenv("DATABASE_URL") or os.getenv("DB_PATH")
 
         if not self.db_path:
-            raise ValueError("DATABASE_URL 또는 DB_PATH 환경 변수가 설정되지 않았습니다.")
+            raise ValueError("DATABASE_URL 또는 DB_PATH 환경 변수가 설정되지 않았으며, db_path 인자도 제공되지 않았습니다.")
 
-        # db_path가 절대 경로일 경우 SQLAlchemy에서 인식할 수 있도록 sqlite:/// 추가
-        if self.db_path.startswith("sqlite:///"):
-            self.db_path = self.db_path
-        elif self.db_path.startswith("postgresql://"):
-            self.db_path = self.db_path
-        elif self.db_path.startswith("/Users/"):
+        # DB 경로를 SQLAlchemy 형식으로 변환
+        if self.db_path.startswith("postgresql://"):
+            # PostgreSQL 경로는 그대로 사용
+            pass
+        elif self.db_path.endswith(".db") or self.db_path.startswith("/"):
+            # SQLite 경로는 SQLAlchemy에서 인식 가능한 형식으로 변환
             self.db_path = f"sqlite:///{self.db_path}"
+        elif self.db_path.startswith("sqlite:///"):
+            # 이미 SQLAlchemy 형식이면 그대로 사용
+            pass
         else:
             raise ValueError(f"지원되지 않는 DB 경로 형식: {self.db_path}")
 
         print(f"DB 경로: {self.db_path}")
 
-        # SQLAlchemy 엔진 생성
-        self.engine = create_engine(self.db_path)
-
-        # SQLAlchemy 세션 생성
-        self.Session = sessionmaker(bind=self.engine)
-
-    def get_db_path(self):
-        if os.getenv("ENV") == "local":
-            return os.getenv("DB_PATH")
-        else:
-            return os.getenv("DATABASE_URL")
+        # SQLAlchemy 엔진 및 세션 생성
+        try:
+            self.engine = create_engine(self.db_path)
+            self.Session = sessionmaker(bind=self.engine)
+        except Exception as e:
+            raise ValueError(f"DB 연결 실패: {str(e)}")
 
     def load_stock_data(
             self,

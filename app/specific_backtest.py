@@ -37,8 +37,8 @@ async def specific_backtest(
 
         # 2. 데이터 로드
         data_loader = DataLoader(db_path)
-
-        if "/Users/" in data_loader.get_db_path():
+        print("!!", data_loader.db_path)
+        if "/Users/" in data_loader.db_path:
             print("요기")
             # 종목명으로 종목 코드 조회
             with sqlite3.connect(db_path) as conn:
@@ -50,7 +50,7 @@ async def specific_backtest(
                 """
                 stock_data = pd.read_sql(query, conn, params=stock_names)
                 print("Loaded stock data:", stock_data)
-        elif "postgresql" in data_loader.get_db_path():
+        elif "postgresql" in data_loader.db_path:
             with psycopg2.connect(db_path) as conn:
                 placeholders = ",".join(["%s" for _ in stock_names])  # PostgreSQL에서는 %s를 사용
                 query = f"""
